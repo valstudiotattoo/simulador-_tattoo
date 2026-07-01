@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Tatuagem</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Container Principal em Duas Colunas */
+        .main-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        /* Coluna da Esquerda: Simulação + Controles */
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+        }
+
+        /* Área da Foto/Simulação */
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 520px;
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .bg-foto {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .tattoo-item {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            width: 50%; 
+            object-fit: contain;
+            mix-blend-mode: multiply; 
+            transition: margin 0.05s linear;
+        }
+
+        /* Painel de Controles */
+        .controls-panel {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background: #00adb5;
+            color: white;
+            text-align: center;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .upload-btn input {
+            display: none;
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            font-size: 0.85rem;
+            color: #aaaaaa;
+            margin-bottom: 8px;
+        }
+
+        .slider-input {
+            width: 100%;
+            accent-color: #00adb5;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        /* D-Pad (Setas de Posição) */
+        .dpad {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 15px;
+            gap: 8px;
+        }
+
+        .dpad-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-seta {
+            width: 44px;
+            height: 40px;
+            background: #2a2a2a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-seta:active {
+            background: #00adb5;
+        }
+
+
+        /* Coluna da Direita: Menu Vertical de Flashes */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 140px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 10px 5px;
+            height: 750px; /* Alinhado com a altura total da esquerda */
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        /* Setas do Menu Lateral */
+        .scroll-arrow {
+            width: 100%;
+            background: #2a2a2a;
+            color: #fff;
+            border: none;
+            padding: 5px 0;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .scroll-arrow:hover {
+            background: #333;
+        }
+
+        /* Área de Scroll Oculta das Tattoos */
+        .tattoo-carousel-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: scroll;
+            width: 100%;
+            padding: 10px 5px;
+            flex: 1;
+            /* Esconde as barras de rolagem padrão para visual limpo */
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .tattoo-carousel-vertical::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Edge */
+        }
+
+        .tattoo-thumb {
+            width: 100%;
+            height: 140px;
+            background: white;
+            border-radius: 6px;
+            object-fit: contain;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        /* Destaque para a tattoo selecionada (Borda vermelha igual ao seu modelo) */
+        .tattoo-thumb.selected {
+            border-color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Simulador de Tatuagem</h1>
+
+    <div class="main-wrapper">
+        
+        <div class="left-column">
+            <div class="canvas-container">
+                <img id="fotoCliente" class="bg-foto" src="img/fundo.jpg" alt="Sua Foto">
+                <img id="tattooCamada" class="tattoo-item" src="img/tattoo1.jpg" alt="Tatuagem">
+            </div>
+
+            <div class="controls-panel">
+                <label class="upload-btn">
+                    📷 1º: Enviar Foto do Corpo
+                    <input type="file" id="inputFoto" accept="image/*">
+                </label>
+
+                <div class="slider-group">
+                    <div class="slider-label">Ajustar Tamanho</div>
+                    <input type="range" id="sliderTamanho" class="slider-input" min="10" max="180" value="50">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label">Rotação</div>
+                    <input type="range" id="sliderRotacao" class="slider-input" min="-180" max="180" value="0">
+                </div>
+
+                <div class="dpad">
+                    <div class="dpad-row">
+                        <button class="btn-seta" onclick="mover('cima')">▲</button>
+                    </div>
+                    <div class="dpad-row">
+                        <button class="btn-seta" onclick="mover('esquerda')">◀</button>
+                        <button class="btn-seta" onclick="mover('baixo')">▼</button>
+                        <button class="btn-seta" onclick="mover('direita')">▶</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <button class="scroll-arrow" onclick="scrollMenu(-150)">▲</button>
+            
+            <div class="tattoo-carousel-vertical" id="menuVertical">
+                <img class="tattoo-thumb selected" src="img/tattoo1.jpg" onclick="mudarTattoo(this, 'img/tattoo1.jpg')">
+                <img class="tattoo-thumb" src="img/tattoo2.jpg" onclick="mudarTattoo(this, 'img/tattoo2.jpg')">
+                <img class="tattoo-thumb" src="img/tattoo3.jpg" onclick="mudarTattoo(this, 'img/tattoo3.jpg')">
+                <img class="tattoo-thumb" src="img/tattoo4.jpg" onclick="mudarTattoo(this, 'img/tattoo4.jpg')">
+                <img class="tattoo-thumb" src="img/tattoo5.jpg" onclick="mudarTattoo(this, 'img/tattoo5.jpg')">
+            </div>
+            
+            <button class="scroll-arrow" onclick="scrollMenu(150)">▼</button>
+        </div>
+
+    </div>
+
+    <script>
+        const inputFoto = document.getElementById('inputFoto');
+        const fotoCliente = document.getElementById('fotoCliente');
+        const tattooCamada = document.getElementById('tattooCamada');
+        const menuVertical = document.getElementById('menuVertical');
+
+        const sliderTamanho = document.getElementById('sliderTamanho');
+        const sliderRotacao = document.getElementById('sliderRotacao');
+
+        let xAtual = 0;
+        let yAtual = 0;
+        let rotacaoAtual = 0;
+        const pixelsPorClique = 6;
+
+        // Movimentação da Tatuagem
+        function mover(direcao) {
+            if (direcao === 'cima') yAtual -= pixelsPorClique;
+            if (direcao === 'baixo') yAtual += pixelsPorClique;
+            if (direcao === 'esquerda') xAtual -= pixelsPorClique;
+            if (direcao === 'direita') xAtual += pixelsPorClique;
+
+            tattooCamada.style.marginTop = yAtual + 'px';
+            tattooCamada.style.marginLeft = xAtual + 'px';
+        }
+
+        // Sliders
+        sliderTamanho.addEventListener('input', (e) => {
+            tattooCamada.style.width = e.target.value + '%';
+        });
+
+        sliderRotacao.addEventListener('input', (e) => {
+            rotacaoAtual = e.target.value;
+            tattooCamada.style.transform = `translate(-50%, -50%) rotate(${rotacaoAtual}deg)`;
+        });
+
+        // Upload da Foto do Cliente
+        inputFoto.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                fotoCliente.src = URL.createObjectURL(file);
+            }
+        });
+
+        // Trocar de Tatuagem ao Clicar na Lateral
+        function mudarTattoo(elementoClicado, caminhoDaImagem) {
+            tattooCamada.src = caminhoDaImagem;
+            
+            // Remove a borda vermelha de todas as miniaturas
+            document.querySelectorAll('.tattoo-thumb').forEach(thumb => {
+                thumb.classList.remove('selected');
+            });
+            // Adiciona a borda vermelha na miniatura ativa
+            elementoClicado.classList.add('selected');
+
+            // Reseta a posição para o centro
+            xAtual = 0; yAtual = 0;
+            tattooCamada.style.marginTop = '0px';
+            tattooCamada.style.marginLeft = '0px';
+        }
+
+        // Função para as setas do Menu Lateral rolarem os desenhos
+        function scrollMenu(distancia) {
+            menuVertical.scrollBy({
+                top: distancia,
+                behavior: 'smooth'
+            });
+        }
+    </script>
+</body>
+</html>
