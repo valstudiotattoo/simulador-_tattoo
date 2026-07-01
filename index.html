@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simulador de Tatuagem</title>
     <style>
         * {
@@ -10,6 +10,10 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Bloqueia o toque longo azul de seleção e o zoom de duplo clique */
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         body {
@@ -18,44 +22,50 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
+            justify-content: flex-start;
+            /* Força a altura exata da tela do celular, sem rolar */
+            height: 100vh;
+            height: -webkit-fill-available; 
+            overflow: hidden;
+            padding: 10px;
         }
 
         h1 {
-            margin-bottom: 25px;
-            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            text-align: center;
         }
 
-        /* Container Principal em Duas Colunas */
+        /* Container Principal Adaptável */
         .main-wrapper {
             display: flex;
-            gap: 20px;
-            align-items: flex-start;
-            max-width: 900px;
+            gap: 10px;
+            align-items: stretch;
             width: 100%;
+            max-width: 500px; /* Tamanho ideal para telas de celular */
+            flex: 1;
+            min-height: 0; /* Permite que os filhos encolham para caber na tela */
         }
 
         /* Coluna da Esquerda: Simulação + Controles */
         .left-column {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 10px;
             flex: 1;
+            min-height: 0;
         }
 
-        /* Área da Foto/Simulação */
+        /* Área da Foto/Simulação (Calcula o espaço que sobra) */
         .canvas-container {
             position: relative;
             width: 100%;
-            height: 520px;
+            flex: 1; /* Ocupa todo o espaço vertical restante */
             background-color: #1e1e1e;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
 
         .bg-foto {
@@ -72,13 +82,12 @@
             width: 50%; 
             object-fit: contain;
             mix-blend-mode: multiply; 
-            transition: margin 0.05s linear;
         }
 
-        /* Painel de Controles */
+        /* Painel de Controles Compacto */
         .controls-panel {
             background: #1e1e1e;
-            padding: 20px;
+            padding: 12px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
@@ -91,13 +100,12 @@
             width: 100%;
             background: #00adb5;
             color: white;
-            text-align: center;
-            padding: 14px;
+            padding: 10px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            margin-bottom: 20px;
-            font-size: 1rem;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
         }
 
         .upload-btn input {
@@ -105,46 +113,44 @@
         }
 
         .slider-group {
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
 
         .slider-label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: #aaaaaa;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .slider-input {
             width: 100%;
             accent-color: #00adb5;
             height: 6px;
-            background: #333;
-            border-radius: 3px;
             outline: none;
         }
 
-        /* D-Pad (Setas de Posição) */
+        /* D-Pad Compacto */
         .dpad {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 15px;
-            gap: 8px;
+            margin-top: 5px;
+            gap: 4px;
         }
 
         .dpad-row {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn-seta {
-            width: 44px;
-            height: 40px;
+            width: 38px;
+            height: 34px;
             background: #2a2a2a;
             color: white;
             border: none;
             border-radius: 6px;
-            font-size: 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -155,18 +161,16 @@
             background: #00adb5;
         }
 
-
-        /* Coluna da Direita: Menu Vertical de Flashes */
+        /* Coluna da Direita: Menu Vertical Estreito */
         .right-column {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 140px;
+            width: 85px; /* Mais estreito para caber melhor em telas finas */
             background: #1e1e1e;
             border-radius: 12px;
-            padding: 10px 5px;
-            height: 750px; /* Alinhado com a altura total da esquerda */
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            padding: 5px 3px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
 
         /* Setas do Menu Lateral */
@@ -175,49 +179,43 @@
             background: #2a2a2a;
             color: #fff;
             border: none;
-            padding: 5px 0;
+            padding: 8px 0;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 4px;
         }
 
-        .scroll-arrow:hover {
-            background: #333;
-        }
-
-        /* Área de Scroll Oculta das Tattoos */
+        /* Área de Scroll */
         .tattoo-carousel-vertical {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
             overflow-y: scroll;
             width: 100%;
-            padding: 10px 5px;
+            padding: 5px 0;
             flex: 1;
-            /* Esconde as barras de rolagem padrão para visual limpo */
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
         }
 
         .tattoo-carousel-vertical::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Edge */
+            display: none;
         }
 
         .tattoo-thumb {
             width: 100%;
-            height: 140px;
+            height: 85px; /* Tamanho proporcional à largura */
             background: white;
             border-radius: 6px;
             object-fit: contain;
             cursor: pointer;
             border: 2px solid transparent;
-            transition: 0.2s;
+            transition: 0.1s;
             flex-shrink: 0;
         }
 
-        /* Destaque para a tattoo selecionada (Borda vermelha igual ao seu modelo) */
         .tattoo-thumb.selected {
             border-color: #ff0000;
         }
@@ -225,7 +223,7 @@
 </head>
 <body>
 
-    <h1>Simulador de Tatuagem</h1>
+    <h1>Val Studio Tattoo</h1>
 
     <div class="main-wrapper">
         
@@ -253,19 +251,19 @@
 
                 <div class="dpad">
                     <div class="dpad-row">
-                        <button class="btn-seta" onclick="mover('cima')">▲</button>
+                        <button class="btn-seta" id="btn-cima">▲</button>
                     </div>
                     <div class="dpad-row">
-                        <button class="btn-seta" onclick="mover('esquerda')">◀</button>
-                        <button class="btn-seta" onclick="mover('baixo')">▼</button>
-                        <button class="btn-seta" onclick="mover('direita')">▶</button>
+                        <button class="btn-seta" id="btn-esquerda">◀</button>
+                        <button class="btn-seta" id="btn-baixo">▼</button>
+                        <button class="btn-seta" id="btn-direita">▶</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="right-column">
-            <button class="scroll-arrow" onclick="scrollMenu(-150)">▲</button>
+            <button class="scroll-arrow" onclick="scrollMenu(-100)">▲</button>
             
             <div class="tattoo-carousel-vertical" id="menuVertical">
                 <img class="tattoo-thumb selected" src="img/tattoo1.jpg" onclick="mudarTattoo(this, 'img/tattoo1.jpg')">
@@ -275,7 +273,7 @@
                 <img class="tattoo-thumb" src="img/tattoo5.jpg" onclick="mudarTattoo(this, 'img/tattoo5.jpg')">
             </div>
             
-            <button class="scroll-arrow" onclick="scrollMenu(150)">▼</button>
+            <button class="scroll-arrow" onclick="scrollMenu(100)">▼</button>
         </div>
 
     </div>
@@ -292,9 +290,25 @@
         let xAtual = 0;
         let yAtual = 0;
         let rotacaoAtual = 0;
-        const pixelsPorClique = 6;
+        const pixelsPorClique = 5;
 
-        // Movimentação da Tatuagem
+        // Travando o zoom de duplo clique via JavaScript (Garantia extra para iOS/Android)
+        document.addEventListener('touchstart', function (event) {
+            if (event.touches.length > 1) {
+                event.preventDefault(); // Impede pinça multitouch
+            }
+        }, { passive: false });
+
+        let ultimoToque = 0;
+        document.addEventListener('touchend', function (event) {
+            const agora = (new Date()).getTime();
+            if (agora - ultimoToque <= 300) {
+                event.preventDefault(); // Impede zoom de duplo clique rápido
+            }
+            ultimoToque = agora;
+        }, false);
+
+        // Movimentação melhorada
         function mover(direcao) {
             if (direcao === 'cima') yAtual -= pixelsPorClique;
             if (direcao === 'baixo') yAtual += pixelsPorClique;
@@ -304,6 +318,12 @@
             tattooCamada.style.marginTop = yAtual + 'px';
             tattooCamada.style.marginLeft = xAtual + 'px';
         }
+
+        // Mapeamento dos botões para evitar delay do clique comum no mobile
+        document.getElementById('btn-cima').addEventListener('pointerdown', () => mover('cima'));
+        document.getElementById('btn-baixo').addEventListener('pointerdown', () => mover('baixo'));
+        document.getElementById('btn-esquerda').addEventListener('pointerdown', () => mover('esquerda'));
+        document.getElementById('btn-direita').addEventListener('pointerdown', () => mover('direita'));
 
         // Sliders
         sliderTamanho.addEventListener('input', (e) => {
@@ -315,7 +335,7 @@
             tattooCamada.style.transform = `translate(-50%, -50%) rotate(${rotacaoAtual}deg)`;
         });
 
-        // Upload da Foto do Cliente
+        // Upload
         inputFoto.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -323,24 +343,20 @@
             }
         });
 
-        // Trocar de Tatuagem ao Clicar na Lateral
+        // Troca de Tattoo
         function mudarTattoo(elementoClicado, caminhoDaImagem) {
             tattooCamada.src = caminhoDaImagem;
             
-            // Remove a borda vermelha de todas as miniaturas
             document.querySelectorAll('.tattoo-thumb').forEach(thumb => {
                 thumb.classList.remove('selected');
             });
-            // Adiciona a borda vermelha na miniatura ativa
             elementoClicado.classList.add('selected');
 
-            // Reseta a posição para o centro
             xAtual = 0; yAtual = 0;
             tattooCamada.style.marginTop = '0px';
             tattooCamada.style.marginLeft = '0px';
         }
 
-        // Função para as setas do Menu Lateral rolarem os desenhos
         function scrollMenu(distancia) {
             menuVertical.scrollBy({
                 top: distancia,
